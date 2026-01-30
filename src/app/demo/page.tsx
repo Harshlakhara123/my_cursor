@@ -1,10 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { se } from "date-fns/locale";
-import { useState } from "react";
+import * as Sentry from "@sentry/nextjs"; 
 
-export default function DemoPage(){
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+
+export default function DemoPage() {
+  const { userId } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [loading2, setLoading2] = useState(false);
@@ -17,6 +20,19 @@ export default function DemoPage(){
     setLoading(false);
   };
 
+  const handleClientError = () => {
+    Sentry.logger.info("User attempting to click on client function" , { userId });
+    throw new Error('Client error: Something went wrong in the browser');
+  }
+
+  const handleApiError = async () => {
+    await fetch("/api/demo/error", { method: 'POST' });
+  }
+
+  const handleInngestError = async () => {
+    await fetch("/api/demo/inngest-error", { method: 'POST' });
+  }
+
   const handleBackground = async () => {
     setLoading2(true);
     await fetch('/api/demo/background', {
@@ -27,12 +43,21 @@ export default function DemoPage(){
 
   return (
     <div className="p-8 space-x-4">
-      <button disabled={loading} onClick={handleBlocking}>
+      <Button disabled={loading} onClick={handleBlocking}>
         {loading ? 'loading...' : 'Blocking'}
-      </button>
-      <button disabled={loading2} onClick={handleBackground}>
+      </Button>
+      <Button disabled={loading2} onClick={handleBackground}>
         {loading2 ? 'loading...' : 'Background'}
-      </button>
+      </Button>
+      <Button variant="destructive" onClick={handleClientError}>
+        Client Error
+      </Button>
+      <Button variant="destructive" onClick={handleApiError}>
+        API Error
+      </Button>
+      <Button variant="destructive" onClick={handleInngestError}>
+        Inngest Error
+      </Button>
     </div>
   );
 };
